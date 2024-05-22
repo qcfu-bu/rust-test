@@ -1,102 +1,112 @@
 use crate::{ast1::*, names::Name};
+use bumpalo::Bump;
 use im::HashMap;
-use std::rc::*;
 
-type Env = HashMap<i32, Val>;
-
-type Val = Rc<ValNode>;
+type Env<'a> = HashMap<i32, &'a Value<'a>>;
 
 #[derive(Debug)]
-pub enum ValNode {
+pub enum Value<'a> {
     Int(i32),
     Bool(bool),
-    Clo(Env, Name, Name, Term),
+    Clo(Env<'a>, &'a Name, &'a Name, &'a Term<'a>),
 }
 
-pub fn eval(env: Env, m0: Term) -> Val {
-    use TermNode::*;
-    match &*m0 {
-        Int(i) => Rc::new(ValNode::Int(*i)),
-        Bool(b) => Rc::new(ValNode::Bool(*b)),
+fn int<'a>(i: i32, bump: &'a Bump) -> &'a Value<'a> {
+    bump.alloc(Value::Int(i))
+}
+
+fn bool<'a>(b: bool, bump: &'a Bump) -> &'a Value<'a> {
+    bump.alloc(Value::Bool(b))
+}
+
+fn clo<'a>(
+    env: Env<'a>,
+    x: &'a Name,
+    y: &'a Name,
+    m: &'a Term<'a>,
+    bump: &'a Bump,
+) -> &'a Value<'a> {
+    bump.alloc(Value::Clo(env, x, y, m))
+}
+
+pub fn eval<'a>(env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
+    use Term::*;
+    match m0 {
+        Int(i) => int(*i, bump),
+        Bool(b) => bool(*b, bump),
         Var(x) => match env.get(&x.id) {
-            Some(v) => v.clone(),
+            Some(v) => v,
             None => {
                 println!("cannot find({:?})", x);
                 panic!()
             }
         },
         Op1(op1, m) => {
-            let m = eval(env.clone(), m.clone());
-            eval_op1(op1, m)
+            let m = eval(env.clone(), m, bump);
+            eval_op1(op1, m, bump)
         }
         Op2(op2, m, n) => {
-            let m = eval(env.clone(), m.clone());
-            let n = eval(env.clone(), n.clone());
-            eval_op2(op2, m, n)
+            let m = eval(env.clone(), m, bump);
+            let n = eval(env.clone(), n, bump);
+            eval_op2(op2, m, n, bump)
         }
-        Fun(f, x, m) => {
-            let f = f.clone();
-            let x = x.clone();
-            let m = m.clone();
-            let clo = ValNode::Clo(env, f, x, m);
-            Rc::new(clo)
-        }
+        Fun(f, x, m) => clo(env, f, x, m, bump),
         App(m, n) => {
-            let m0 = eval(env.clone(), m.clone());
-            let n = eval(env.clone(), n.clone());
-            match &*m0 {
-                ValNode::Clo(env, f, x, m) => {
+            let m0 = eval(env.clone(), m, bump);
+            let n = eval(env.clone(), n, bump);
+            match m0 {
+                Value::Clo(env, f, x, m) => {
                     let mut env = env.clone();
-                    env.insert(f.id, m0.clone());
-                    env.insert(x.id, n.clone());
-                    eval(env, m.clone())
+                    env.insert(f.id, m0);
+                    env.insert(x.id, n);
+                    eval(env, m, bump)
                 }
                 _ => panic!("eval_App({:?})", m0),
             }
         }
         LetIn(x, m, n) => {
-            let m = eval(env.clone(), m.clone());
+            let m = eval(env.clone(), m, bump);
             let mut env = env.clone();
-            env.insert(x.clone().id, m);
-            eval(env, n.clone())
+            env.insert(x.id, m);
+            eval(env, n, bump)
         }
         Ifte(m, n1, n2) => {
-            let m = eval(env.clone(), m.clone());
-            match &*m {
-                ValNode::Bool(true) => eval(env, n1.clone()),
-                ValNode::Bool(false) => eval(env, n2.clone()),
+            let m = eval(env.clone(), m, bump);
+            match m {
+                Value::Bool(true) => eval(env, n1, bump),
+                Value::Bool(false) => eval(env, n2, bump),
                 _ => panic!("eval_Ifte({:?})", m0),
             }
         }
     }
 }
 
-fn eval_op1(op: &Op1, m: Val) -> Val {
+fn eval_op1<'a>(op: &Op1, m: &'a Value<'a>, bump: &'a Bump) -> &'a Value<'a> {
     use self::Op1::*;
-    use ValNode::*;
+    use Value::*;
     match (op, &*m) {
-        (Not, Bool(b)) => Rc::new(Bool(!b)),
-        (Neg, Int(i)) => Rc::new(Int(-i)),
+        (Not, Bool(b)) => bool(!b, bump),
+        (Neg, Int(i)) => int(-i, bump),
         (_, _) => panic!("eval_op1({:?}, {:?})", op, m),
     }
 }
 
-fn eval_op2(op: &Op2, m: Val, n: Val) -> Val {
+fn eval_op2<'a>(op: &Op2, m: &'a Value<'a>, n: &'a Value<'a>, bump: &'a Bump) -> &'a Value<'a> {
     use self::Op2::*;
-    use ValNode::*;
+    use Value::*;
     match (op, &*m, &*n) {
-        (Add, Int(i), Int(j)) => Rc::new(Int(i + j)),
-        (Sub, Int(i), Int(j)) => Rc::new(Int(i - j)),
-        (Mul, Int(i), Int(j)) => Rc::new(Int(i * j)),
-        (Div, Int(i), Int(j)) => Rc::new(Int(i / j)),
-        (Lte, Int(i), Int(j)) => Rc::new(Bool(i <= j)),
-        (Gte, Int(i), Int(j)) => Rc::new(Bool(i >= j)),
-        (Lt, Int(i), Int(j)) => Rc::new(Bool(i < j)),
-        (Gt, Int(i), Int(j)) => Rc::new(Bool(i > j)),
-        (Eq, Int(i), Int(j)) => Rc::new(Bool(i == j)),
-        (Neq, Int(i), Int(j)) => Rc::new(Bool(i != j)),
-        (And, Bool(i), Bool(j)) => Rc::new(Bool(*i && *j)),
-        (Or, Bool(i), Bool(j)) => Rc::new(Bool(*i || *j)),
+        (Add, Int(i), Int(j)) => int(i + j, bump),
+        (Sub, Int(i), Int(j)) => int(i - j, bump),
+        (Mul, Int(i), Int(j)) => int(i * j, bump),
+        (Div, Int(i), Int(j)) => int(i / j, bump),
+        (Lte, Int(i), Int(j)) => bool(i <= j, bump),
+        (Gte, Int(i), Int(j)) => bool(i >= j, bump),
+        (Lt, Int(i), Int(j)) => bool(i < j, bump),
+        (Gt, Int(i), Int(j)) => bool(i > j, bump),
+        (Eq, Int(i), Int(j)) => bool(i == j, bump),
+        (Neq, Int(i), Int(j)) => bool(i != j, bump),
+        (And, Bool(i), Bool(j)) => bool(*i && *j, bump),
+        (Or, Bool(i), Bool(j)) => bool(*i || *j, bump),
         (_, _, _) => panic!("eval_op2({:?}, {:?}, {:?})", op, m, n),
     }
 }
