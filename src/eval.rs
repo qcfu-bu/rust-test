@@ -2,7 +2,7 @@ use crate::{ast1::*, names::Name};
 use bumpalo::Bump;
 use im::HashMap;
 
-type Env<'a> = HashMap<i32, &'a Value<'a>>;
+type Env<'a> = HashMap<&'a Name, &'a Value<'a>>;
 
 #[derive(Debug)]
 pub enum Value<'a> {
@@ -34,7 +34,7 @@ pub fn eval<'a>(env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
     match m0 {
         Int(i) => int(*i, bump),
         Bool(b) => bool(*b, bump),
-        Var(x) => match env.get(&x.id) {
+        Var(x) => match env.get(x) {
             Some(v) => v,
             None => {
                 println!("cannot find({:?})", x);
@@ -57,8 +57,8 @@ pub fn eval<'a>(env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
             match m0 {
                 Value::Clo(env, f, x, m) => {
                     let mut env = env.clone();
-                    env.insert(f.id, m0);
-                    env.insert(x.id, n);
+                    env.insert(f, m0);
+                    env.insert(x, n);
                     eval(env, m, bump)
                 }
                 _ => panic!("eval_App({:?})", m0),
@@ -67,7 +67,7 @@ pub fn eval<'a>(env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
         LetIn(x, m, n) => {
             let m = eval(env.clone(), m, bump);
             let mut env = env.clone();
-            env.insert(x.id, m);
+            env.insert(x, m);
             eval(env, n, bump)
         }
         Ifte(m, n1, n2) => {
