@@ -72,14 +72,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "im"
+name = "im-rc"
 version = "15.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0acd33ff0285af998aaf9b57342af478078f53492322fafc47450e09397e0e9"
+checksum = "af1955a75fa080c677d3972822ec4bad316169ab1cfc6c257a942c2265dbe5fe"
 dependencies = [
  "bitmaps",
  "rand_core",
  "rand_xoshiro",
+ "refpool",
  "sized-chunks",
  "typenum",
  "version_check",
@@ -188,11 +189,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "refpool"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "369e86b80fa7dc8c561dd9613a5bf25c59d2d3073cd66c47fd9e39802f0ecb58"
+
+[[package]]
 name = "rust-test"
 version = "0.1.0"
 dependencies = [
  "bumpalo",
- "im",
+ "im-rc",
  "lazy_static",
  "pest",
  "pest_derive",
@@ -216,6 +223,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "16d69225bde7a69b235da73377861095455d298f2b970996eec25ddbb42b3d1e"
 dependencies = [
  "bitmaps",
+ "refpool",
  "typenum",
 ]
 

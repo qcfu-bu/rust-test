@@ -4,15 +4,15 @@ mod eval;
 mod names;
 mod parse;
 mod trans01;
+
 use bumpalo::Bump;
 use eval::*;
-use im::HashMap;
+use im_rc::HashMap;
 use parse::*;
 use pest::Parser;
 use std::env;
 use std::fs;
-
-use crate::trans01::trans;
+use trans01::trans;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

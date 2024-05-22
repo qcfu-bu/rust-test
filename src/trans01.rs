@@ -1,6 +1,6 @@
 use crate::{ast0, ast1, names::Name};
 use bumpalo::Bump;
-use im::HashMap;
+use im_rc::HashMap;
 
 pub type Ctx<'a> = HashMap<String, &'a Name>;
 
