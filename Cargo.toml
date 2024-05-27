@@ -13,8 +13,8 @@ opt-level = 3
 opt-level = 3
 
 [dependencies]
+mimalloc = "0.1.42"
 im-rc = { version = "15.1.0" }
-immutable-chunkmap = { path = "immutable-chunkmap" }
 pest = "2.7.9"
 pest_derive = "2.7.9"
 lazy_static = "1.4.0"

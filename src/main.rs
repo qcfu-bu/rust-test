@@ -5,6 +5,10 @@ mod names;
 mod parse;
 mod trans01;
 
+use mimalloc::MiMalloc;
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 use bumpalo::Bump;
 use eval::*;
 use im_rc::HashMap;
