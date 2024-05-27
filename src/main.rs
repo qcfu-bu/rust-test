@@ -8,6 +8,7 @@ mod trans01;
 use bumpalo::Bump;
 use eval::*;
 use im_rc::HashMap;
+use im_rc::OrdMap;
 use parse::*;
 use pest::Parser;
 use std::env;
@@ -23,9 +24,9 @@ fn main() {
             let bump2 = Bump::new();
             let tm = parse_term(pairs.next().unwrap().into_inner(), &bump1);
             let tm = trans(HashMap::new(), tm, &bump2);
-            bump1.reset();
-            let val = eval(HashMap::new(), tm, &bump2);
             println!("term  : {:?}", tm);
+            bump1.reset();
+            let val = eval(OrdMap::new(), tm, &bump2);
             println!("value : {:?}", val);
         }
         Err(e) => {

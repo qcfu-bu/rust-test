@@ -1,7 +1,7 @@
 use std::{
+    cmp::Ordering,
     hash::{Hash, Hasher},
-    sync::atomic::AtomicI32,
-    sync::atomic::Ordering::Relaxed,
+    sync::atomic::{AtomicI32, Ordering::Relaxed},
 };
 
 use bumpalo::Bump;
@@ -26,6 +26,18 @@ impl Name {
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);
+    }
+}
+
+impl PartialOrd for Name {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.id.partial_cmp(&other.id)
+    }
+}
+
+impl Ord for Name {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id.cmp(&other.id)
     }
 }
 

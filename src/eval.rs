@@ -1,8 +1,8 @@
 use crate::{ast1::*, names::Name};
 use bumpalo::Bump;
-use im_rc::HashMap;
+use im_rc::OrdMap;
 
-type Env<'a> = HashMap<&'a Name, &'a Value<'a>>;
+type Env<'a> = OrdMap<&'a Name, &'a Value<'a>>;
 
 #[derive(Debug, Clone)]
 pub enum Value<'a> {
