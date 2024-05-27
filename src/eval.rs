@@ -4,7 +4,7 @@ use im_rc::HashMap;
 
 type Env<'a> = HashMap<&'a Name, &'a Value<'a>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value<'a> {
     Int(i32),
     Bool(bool),
@@ -29,7 +29,7 @@ fn clo<'a>(
     bump.alloc(Value::Clo(env, x, y, m))
 }
 
-pub fn eval<'a>(env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
+pub fn eval<'a>(mut env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
     use Term::*;
     match m0 {
         Int(i) => int(*i, bump),
@@ -47,13 +47,13 @@ pub fn eval<'a>(env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
         }
         Op2(op2, m, n) => {
             let m = eval(env.clone(), m, bump);
-            let n = eval(env.clone(), n, bump);
+            let n = eval(env, n, bump);
             eval_op2(op2, m, n, bump)
         }
         Fun(f, x, m) => clo(env, f, x, m, bump),
         App(m, n) => {
             let m0 = eval(env.clone(), m, bump);
-            let n = eval(env.clone(), n, bump);
+            let n = eval(env, n, bump);
             match m0 {
                 Value::Clo(env, f, x, m) => {
                     let mut env = env.clone();
@@ -66,7 +66,6 @@ pub fn eval<'a>(env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
         }
         LetIn(x, m, n) => {
             let m = eval(env.clone(), m, bump);
-            let mut env = env.clone();
             env.insert(x, m);
             eval(env, n, bump)
         }
