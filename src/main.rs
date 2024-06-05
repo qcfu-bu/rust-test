@@ -11,7 +11,6 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-use bumpalo::Bump;
 use eval::*;
 use im_rc::HashMap;
 use parse::*;
@@ -24,13 +23,10 @@ fn main() {
     let file = fs::read_to_string(&args[1]).expect("cannot read file");
     match LamParser::parse(Rule::prog, &file) {
         Ok(mut pairs) => {
-            let mut bump1 = Bump::new();
-            let bump2 = Bump::new();
-            let tm = parse_term(pairs.next().unwrap().into_inner(), &bump1);
-            let tm = trans(HashMap::new(), tm, &bump2);
+            let tm = parse_term(pairs.next().unwrap().into_inner());
+            let tm = trans(HashMap::new(), tm);
             println!("term  : {:?}", tm);
-            bump1.reset();
-            let val = eval(nil(&bump2), tm, &bump2);
+            let val = eval(nil(), tm);
             println!("value : {:?}", val);
         }
         Err(e) => {

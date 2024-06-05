@@ -1,10 +1,9 @@
 use std::{
     cmp::Ordering,
     hash::{Hash, Hasher},
+    rc::*,
     sync::atomic::{AtomicI32, Ordering::Relaxed},
 };
-
-use bumpalo::Bump;
 
 #[derive(Debug, Clone)]
 pub struct Name {
@@ -15,8 +14,8 @@ pub struct Name {
 static STAMP: AtomicI32 = AtomicI32::new(0);
 
 impl Name {
-    pub fn create(s: String, bump: &Bump) -> &Self {
-        bump.alloc(Name {
+    pub fn create(s: String) -> Rc<Self> {
+        Rc::new(Name {
             name: s,
             id: STAMP.fetch_add(1, Relaxed),
         })

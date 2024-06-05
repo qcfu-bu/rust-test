@@ -1,8 +1,8 @@
 use crate::ast0;
 use ast0::*;
-use bumpalo::Bump;
 use pest::iterators::Pairs;
 use pest::pratt_parser::PrattParser;
+use std::rc::*;
 
 #[derive(pest_derive::Parser)]
 #[grammar = "lam.pest"]
@@ -23,14 +23,14 @@ lazy_static::lazy_static! {
   };
 }
 
-pub fn parse_term<'a>(pairs: Pairs<Rule>, bump: &'a Bump) -> &'a Term<'a> {
+pub fn parse_term(pairs: Pairs<Rule>) -> Rc<Term> {
     use self::Op1::*;
     use self::Op2::*;
     PRATT_PARSER
         .map_primary(|primary| match primary.as_rule() {
-            Rule::bool => bool(primary.as_str().parse::<bool>().unwrap(), bump),
-            Rule::integer => int(primary.as_str().parse::<i32>().unwrap(), bump),
-            Rule::var => var(String::from(primary.as_str()), bump),
+            Rule::bool => bool(primary.as_str().parse::<bool>().unwrap()),
+            Rule::integer => int(primary.as_str().parse::<i32>().unwrap()),
+            Rule::var => var(String::from(primary.as_str())),
             Rule::letin => {
                 let outer = primary.into_inner().next().unwrap();
                 match outer.as_rule() {
@@ -39,23 +39,23 @@ pub fn parse_term<'a>(pairs: Pairs<Rule>, bump: &'a Bump) -> &'a Term<'a> {
                         let f = String::from(inner.next().unwrap().as_str());
                         let x = String::from(inner.next().unwrap().as_str());
                         let args = inner.next().unwrap().into_inner();
-                        let mut body = parse_term(inner.next().unwrap().into_inner(), bump);
-                        let m = parse_term(inner.next().unwrap().into_inner(), bump);
+                        let mut body = parse_term(inner.next().unwrap().into_inner());
+                        let m = parse_term(inner.next().unwrap().into_inner());
                         for arg in args.rev() {
-                            body = fun(String::from(""), String::from(arg.as_str()), body, bump)
+                            body = fun(String::from(""), String::from(arg.as_str()), body)
                         }
-                        letin(f.clone(), fun(f, x, body, bump), m, bump)
+                        letin(f.clone(), fun(f, x, body), m)
                     }
                     Rule::decl => {
                         let mut inner = outer.into_inner();
                         let x = String::from(inner.next().unwrap().as_str());
                         let args = inner.next().unwrap().into_inner();
-                        let mut body = parse_term(inner.next().unwrap().into_inner(), bump);
-                        let m = parse_term(inner.next().unwrap().into_inner(), bump);
+                        let mut body = parse_term(inner.next().unwrap().into_inner());
+                        let m = parse_term(inner.next().unwrap().into_inner());
                         for arg in args.rev() {
-                            body = fun(String::from(""), String::from(arg.as_str()), body, bump)
+                            body = fun(String::from(""), String::from(arg.as_str()), body)
                         }
-                        letin(x, body, m, bump)
+                        letin(x, body, m)
                     }
                     _ => panic!(),
                 }
@@ -63,41 +63,41 @@ pub fn parse_term<'a>(pairs: Pairs<Rule>, bump: &'a Bump) -> &'a Term<'a> {
             Rule::lambda => {
                 let mut inner = primary.into_inner();
                 let args = inner.next().unwrap().into_inner();
-                let mut body = parse_term(inner.next().unwrap().into_inner(), bump);
+                let mut body = parse_term(inner.next().unwrap().into_inner());
                 for arg in args.rev() {
-                    body = fun(String::from(""), String::from(arg.as_str()), body, bump)
+                    body = fun(String::from(""), String::from(arg.as_str()), body)
                 }
                 body
             }
             Rule::ifte => {
                 let mut inner = primary.into_inner();
-                let cond = parse_term(inner.next().unwrap().into_inner(), bump);
-                let m1 = parse_term(inner.next().unwrap().into_inner(), bump);
-                let m2 = parse_term(inner.next().unwrap().into_inner(), bump);
-                ifte(cond, m1, m2, bump)
+                let cond = parse_term(inner.next().unwrap().into_inner());
+                let m1 = parse_term(inner.next().unwrap().into_inner());
+                let m2 = parse_term(inner.next().unwrap().into_inner());
+                ifte(cond, m1, m2)
             }
-            Rule::term => parse_term(primary.into_inner(), bump),
+            Rule::term => parse_term(primary.into_inner()),
             _ => panic!(),
         })
         .map_infix(|lhs, op, rhs| match op.as_rule() {
-            Rule::add => op2(Add, lhs, rhs, bump),
-            Rule::sub => op2(Sub, lhs, rhs, bump),
-            Rule::mul => op2(Mul, lhs, rhs, bump),
-            Rule::div => op2(Div, lhs, rhs, bump),
-            Rule::lte => op2(Lte, lhs, rhs, bump),
-            Rule::gte => op2(Gte, lhs, rhs, bump),
-            Rule::lt => op2(Lt, lhs, rhs, bump),
-            Rule::gt => op2(Gt, lhs, rhs, bump),
-            Rule::eq => op2(Eq, lhs, rhs, bump),
-            Rule::neq => op2(Neq, lhs, rhs, bump),
-            Rule::and => op2(And, lhs, rhs, bump),
-            Rule::or => op2(Or, lhs, rhs, bump),
-            Rule::app => app(lhs, rhs, bump),
+            Rule::add => op2(Add, lhs, rhs),
+            Rule::sub => op2(Sub, lhs, rhs),
+            Rule::mul => op2(Mul, lhs, rhs),
+            Rule::div => op2(Div, lhs, rhs),
+            Rule::lte => op2(Lte, lhs, rhs),
+            Rule::gte => op2(Gte, lhs, rhs),
+            Rule::lt => op2(Lt, lhs, rhs),
+            Rule::gt => op2(Gt, lhs, rhs),
+            Rule::eq => op2(Eq, lhs, rhs),
+            Rule::neq => op2(Neq, lhs, rhs),
+            Rule::and => op2(And, lhs, rhs),
+            Rule::or => op2(Or, lhs, rhs),
+            Rule::app => app(lhs, rhs),
             _ => panic!(),
         })
         .map_prefix(|op, rhs| match op.as_rule() {
-            Rule::not => op1(Not, rhs, bump),
-            Rule::neg => op1(Neg, rhs, bump),
+            Rule::not => op1(Not, rhs),
+            Rule::neg => op1(Neg, rhs),
             _ => panic!(),
         })
         .parse(pairs)

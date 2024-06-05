@@ -1,56 +1,56 @@
 use crate::{ast0, ast1, names::Name};
-use bumpalo::Bump;
 use im_rc::HashMap;
+use std::rc::*;
 
-pub type Ctx<'a> = HashMap<String, &'a Name>;
+pub type Ctx = HashMap<String, Rc<Name>>;
 
-pub fn trans<'a, 'b>(ctx: Ctx<'b>, m: &'a ast0::Term<'a>, bump: &'b Bump) -> &'b ast1::Term<'b> {
+pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> Rc<ast1::Term> {
     use ast0::Term::*;
-    match m {
-        Int(i) => ast1::int(*i, bump),
-        Bool(b) => ast1::bool(*b, bump),
+    match &*m {
+        Int(i) => ast1::int(*i),
+        Bool(b) => ast1::bool(*b),
         Var(s) => {
             let x = ctx.get(s).unwrap();
-            ast1::var(x, bump)
+            ast1::var(x.clone())
         }
         Op1(op1, m) => {
             let op1 = trans_op1(op1);
-            let m = trans(ctx, m, bump);
-            ast1::op1(op1, m, bump)
+            let m = trans(ctx, m.clone());
+            ast1::op1(op1, m)
         }
         Op2(op2, m, n) => {
             let op2 = trans_op2(op2);
-            let m = trans(ctx.clone(), m, bump);
-            let n = trans(ctx.clone(), n, bump);
-            ast1::op2(op2, m, n, bump)
+            let m = trans(ctx.clone(), m.clone());
+            let n = trans(ctx.clone(), n.clone());
+            ast1::op2(op2, m, n)
         }
         Fun(f0, x0, m) => {
             let mut ctx = ctx.clone();
-            let f = Name::create(f0.clone(), bump);
-            let x = Name::create(x0.clone(), bump);
-            ctx.insert(f0.clone(), f);
-            ctx.insert(x0.clone(), x);
-            let m = trans(ctx, m, bump);
-            ast1::fun(f, x, m, bump)
+            let f = Name::create(f0.clone());
+            let x = Name::create(x0.clone());
+            ctx.insert(f0.clone(), f.clone());
+            ctx.insert(x0.clone(), x.clone());
+            let m = trans(ctx, m.clone());
+            ast1::fun(f, x, m)
         }
         App(m, n) => {
-            let m = trans(ctx.clone(), m, bump);
-            let n = trans(ctx.clone(), n, bump);
-            ast1::app(m, n, bump)
+            let m = trans(ctx.clone(), m.clone());
+            let n = trans(ctx.clone(), n.clone());
+            ast1::app(m, n)
         }
         LetIn(x0, m, n) => {
-            let m = trans(ctx.clone(), m, bump);
+            let m = trans(ctx.clone(), m.clone());
             let mut ctx = ctx.clone();
-            let x = Name::create(x0.clone(), bump);
-            ctx.insert(x0.clone(), x);
-            let n = trans(ctx, n, bump);
-            ast1::letin(x, m, n, bump)
+            let x = Name::create(x0.clone());
+            ctx.insert(x0.clone(), x.clone());
+            let n = trans(ctx, n.clone());
+            ast1::letin(x, m, n)
         }
         Ifte(m, n1, n2) => {
-            let m = trans(ctx.clone(), m, bump);
-            let n1 = trans(ctx.clone(), n1, bump);
-            let n2 = trans(ctx.clone(), n2, bump);
-            ast1::ifte(m, n1, n2, bump)
+            let m = trans(ctx.clone(), m.clone());
+            let n1 = trans(ctx.clone(), n1.clone());
+            let n2 = trans(ctx.clone(), n2.clone());
+            ast1::ifte(m, n1, n2)
         }
     }
 }
