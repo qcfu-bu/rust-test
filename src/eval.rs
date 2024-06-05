@@ -1,14 +1,14 @@
+use crate::env::*;
 use crate::{ast1::*, names::Name};
 use bumpalo::Bump;
-use im_rc::OrdMap;
 
-type Env<'a> = OrdMap<&'a Name, &'a Value<'a>>;
+type Env<'a> = List<'a, (&'a Name, &'a Value<'a>)>;
 
 #[derive(Debug, Clone)]
 pub enum Value<'a> {
     Int(i32),
     Bool(bool),
-    Clo(Env<'a>, &'a Name, &'a Name, &'a Term<'a>),
+    Clo(&'a Env<'a>, &'a Name, &'a Name, &'a Term<'a>),
 }
 
 fn int<'a>(i: i32, bump: &'a Bump) -> &'a Value<'a> {
@@ -20,7 +20,7 @@ fn bool<'a>(b: bool, bump: &'a Bump) -> &'a Value<'a> {
 }
 
 fn clo<'a>(
-    env: Env<'a>,
+    env: &'a Env<'a>,
     x: &'a Name,
     y: &'a Name,
     m: &'a Term<'a>,
@@ -29,12 +29,12 @@ fn clo<'a>(
     bump.alloc(Value::Clo(env, x, y, m))
 }
 
-pub fn eval<'a>(mut env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
+pub fn eval<'a>(env: &'a Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a> {
     use Term::*;
     match m0 {
         Int(i) => int(*i, bump),
         Bool(b) => bool(*b, bump),
-        Var(x) => match env.get(x) {
+        Var(x) => match find(*x, env) {
             Some(v) => v,
             None => {
                 println!("cannot find({:?})", x);
@@ -42,35 +42,34 @@ pub fn eval<'a>(mut env: Env<'a>, m0: &'a Term, bump: &'a Bump) -> &'a Value<'a>
             }
         },
         Op1(op1, m) => {
-            let m = eval(env.clone(), m, bump);
-            eval_op1(op1, m, bump)
+            let m = eval(env, m, bump);
+            eval_op1(&op1, m, bump)
         }
         Op2(op2, m, n) => {
-            let m = eval(env.clone(), m, bump);
+            let m = eval(env, m, bump);
             let n = eval(env, n, bump);
-            eval_op2(op2, m, n, bump)
+            eval_op2(&op2, m, n, bump)
         }
         Fun(f, x, m) => clo(env, f, x, m, bump),
         App(m, n) => {
-            let m0 = eval(env.clone(), m, bump);
+            let m0 = eval(env, m, bump);
             let n = eval(env, n, bump);
-            match m0 {
+            match *m0 {
                 Value::Clo(env, f, x, m) => {
-                    let mut env = env.clone();
-                    env.insert(f, m0);
-                    env.insert(x, n);
+                    let env = cons((f, m0), env, bump);
+                    let env = cons((x, n), env, bump);
                     eval(env, m, bump)
                 }
                 _ => panic!("eval_App({:?})", m0),
             }
         }
         LetIn(x, m, n) => {
-            let m = eval(env.clone(), m, bump);
-            env.insert(x, m);
+            let m = eval(env, m, bump);
+            let env = cons((*x, m), env, bump);
             eval(env, n, bump)
         }
         Ifte(m, n1, n2) => {
-            let m = eval(env.clone(), m, bump);
+            let m = eval(env, m, bump);
             match m {
                 Value::Bool(true) => eval(env, n1, bump),
                 Value::Bool(false) => eval(env, n2, bump),

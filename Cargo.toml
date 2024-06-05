@@ -10,6 +10,7 @@ overflow-checks = false
 opt-level = 3
 
 [profile.release]
+debug = true
 opt-level = 3
 
 [dependencies]
