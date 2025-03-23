@@ -1,8 +1,11 @@
 use crate::env::*;
 use crate::{ast1::*, names::Name};
+use ahash::AHasher;
+use im_rc::{HashMap, OrdMap};
+use rpds::{HashTrieMap, RedBlackTreeMap};
 use std::rc::Rc;
 
-type Env = Rc<List<(Rc<Name>, Rc<Value>)>>;
+type Env = OrdMap<Rc<Name>, Rc<Value>>;
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -28,7 +31,7 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
     match &*m0 {
         Int(i) => int(*i),
         Bool(b) => bool(*b),
-        Var(x) => match find(x.clone(), env) {
+        Var(x) => match env.get(x) {
             Some(v) => v.clone(),
             None => {
                 println!("cannot find({:?})", x);
@@ -50,8 +53,9 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
             let n = eval(env, n.clone());
             match &*m0 {
                 Value::Clo(env, f, x, m) => {
-                    let env = cons((f.clone(), m0.clone()), env.clone());
-                    let env = cons((x.clone(), n), env);
+                    let mut env = env.clone();
+                    env.insert(f.clone(), m0.clone());
+                    env.insert(x.clone(), n);
                     eval(env, m.clone())
                 }
                 _ => panic!("eval_App({:?})", m0),
@@ -59,7 +63,8 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
         }
         LetIn(x, m, n) => {
             let m = eval(env.clone(), m.clone());
-            let env = cons((x.clone(), m), env);
+            let mut env = env.clone();
+            env.insert(x.clone(), m);
             eval(env, n.clone())
         }
         Ifte(m, n1, n2) => {

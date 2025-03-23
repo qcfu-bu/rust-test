@@ -1,30 +1,25 @@
-use std::rc::*;
+use rpds::List;
+pub type ListMap<K, V> = List<(K, V)>;
 
-#[derive(Debug, Clone)]
-pub enum List<A> {
-    Nil,
-    Cons(A, Rc<List<A>>),
+pub fn nil<K, V>() -> ListMap<K, V> {
+    List::new()
 }
 
-pub fn nil<A>() -> Rc<List<A>> {
-    Rc::new(List::Nil)
+pub fn cons<K, V>(x: (K, V), xs: ListMap<K, V>) -> ListMap<K, V> {
+    xs.push_front(x)
 }
 
-pub fn cons<A>(x: A, xs: Rc<List<A>>) -> Rc<List<A>> {
-    Rc::new(List::Cons(x, xs))
-}
-
-pub fn find<A, B>(k: A, mut xs: Rc<List<(A, Rc<B>)>>) -> Option<Rc<B>>
+pub fn find<K, V>(k: K, xs: ListMap<K, V>) -> Option<V>
 where
-    A: PartialEq,
+    K: PartialEq,
+    V: Clone,
 {
-    let mut res = None;
-    while let List::Cons((k0, x), xs0) = &*xs {
+    let mut res: Option<V> = None;
+    for (k0, v) in &xs {
         if k == *k0 {
-            res = Some(x.clone());
+            res = Some(v.clone());
             break;
         }
-        xs = xs0.clone()
     }
     res
 }

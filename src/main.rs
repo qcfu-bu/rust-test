@@ -12,9 +12,10 @@ use mimalloc::MiMalloc;
 static GLOBAL: MiMalloc = MiMalloc;
 
 use eval::*;
-use im_rc::HashMap;
+use im_rc::{HashMap, OrdMap};
 use parse::*;
 use pest::Parser;
+use rpds::RedBlackTreeMap;
 use std::fs;
 use trans01::trans;
 
@@ -26,7 +27,7 @@ fn main() {
             let tm = parse_term(pairs.next().unwrap().into_inner());
             let tm = trans(HashMap::new(), tm);
             println!("term  : {:?}", tm);
-            let val = eval(nil(), tm);
+            let val = eval(OrdMap::default(), tm);
             println!("value : {:?}", val);
         }
         Err(e) => {
