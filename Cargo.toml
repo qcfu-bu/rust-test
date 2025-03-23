@@ -10,15 +10,16 @@ overflow-checks = false
 opt-level = 3
 
 [profile.release]
-debug = true
+overflow-checks = false
 opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+debug = true
 
 [dependencies]
 mimalloc = "0.1.42"
-im-rc = { version = "15.1.0" }
 pest = "2.7.9"
 pest_derive = "2.7.9"
 lazy_static = "1.4.0"
-bumpalo = "3.16.0"
-rpds = "1.1.0"
 ahash = "0.8.11"

@@ -5,8 +5,9 @@ let mul n m f x := n (m f) x in
 let one := succ zero in
 let two := succ one in
 let three := succ two in
-let nine := mul three three in
-let ten := succ nine in
+let five := add two three in
+let ten := add five five in
+let fifteen := add ten five in
 let hundred := mul ten ten in
 let fact k :=
   k (fun p => p (fun a b g => g (fun f x => f (a f x)) (fun f => a (b f))))

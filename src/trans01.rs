@@ -1,8 +1,8 @@
 use crate::{ast0, ast1, names::Name};
-use im_rc::HashMap;
+use ahash::HashMap;
 use std::rc::*;
 
-pub type Ctx = HashMap<String, Rc<Name>>;
+pub type Ctx = Rc<HashMap<String, Rc<Name>>>;
 
 pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> Rc<ast1::Term> {
     use ast0::Term::*;
@@ -25,12 +25,12 @@ pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> Rc<ast1::Term> {
             ast1::op2(op2, m, n)
         }
         Fun(f0, x0, m) => {
-            let mut ctx = ctx.clone();
+            let mut ctx = (*ctx).clone();
             let f = Name::create(f0.clone());
             let x = Name::create(x0.clone());
             ctx.insert(f0.clone(), f.clone());
             ctx.insert(x0.clone(), x.clone());
-            let m = trans(ctx, m.clone());
+            let m = trans(Rc::new(ctx), m.clone());
             ast1::fun(f, x, m)
         }
         App(m, n) => {
@@ -40,10 +40,10 @@ pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> Rc<ast1::Term> {
         }
         LetIn(x0, m, n) => {
             let m = trans(ctx.clone(), m.clone());
-            let mut ctx = ctx.clone();
+            let mut ctx = (*ctx).clone();
             let x = Name::create(x0.clone());
             ctx.insert(x0.clone(), x.clone());
-            let n = trans(ctx, n.clone());
+            let n = trans(Rc::new(ctx), n.clone());
             ast1::letin(x, m, n)
         }
         Ifte(m, n1, n2) => {

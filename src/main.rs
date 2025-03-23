@@ -1,22 +1,19 @@
 mod ast0;
 mod ast1;
-mod env;
 mod eval;
 mod names;
 mod parse;
 mod trans01;
 
-use env::nil;
+use ahash::HashMap;
 use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 use eval::*;
-use im_rc::{HashMap, OrdMap};
 use parse::*;
 use pest::Parser;
-use rpds::RedBlackTreeMap;
-use std::fs;
+use std::{fs, rc::Rc};
 use trans01::trans;
 
 fn main() {
@@ -25,9 +22,9 @@ fn main() {
     match LamParser::parse(Rule::prog, &file) {
         Ok(mut pairs) => {
             let tm = parse_term(pairs.next().unwrap().into_inner());
-            let tm = trans(HashMap::new(), tm);
+            let tm = trans(Rc::new(HashMap::default()), tm);
             println!("term  : {:?}", tm);
-            let val = eval(OrdMap::default(), tm);
+            let val = eval(Rc::new(ahash::HashMap::default()), tm);
             println!("value : {:?}", val);
         }
         Err(e) => {

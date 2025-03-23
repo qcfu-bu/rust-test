@@ -1,11 +1,8 @@
-use crate::env::*;
 use crate::{ast1::*, names::Name};
-use ahash::AHasher;
-use im_rc::{HashMap, OrdMap};
-use rpds::{HashTrieMap, RedBlackTreeMap};
+use ahash::HashMap;
 use std::rc::Rc;
 
-type Env = OrdMap<Rc<Name>, Rc<Value>>;
+type Env = Rc<HashMap<Rc<Name>, Rc<Value>>>;
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -40,12 +37,12 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
         },
         Op1(op1, m) => {
             let m = eval(env, m.clone());
-            eval_op1(&op1, m)
+            eval_op1(op1, m)
         }
         Op2(op2, m, n) => {
             let m = eval(env.clone(), m.clone());
             let n = eval(env, n.clone());
-            eval_op2(&op2, m, n)
+            eval_op2(op2, m, n)
         }
         Fun(f, x, m) => clo(env, f.clone(), x.clone(), m.clone()),
         App(m, n) => {
@@ -53,19 +50,19 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
             let n = eval(env, n.clone());
             match &*m0 {
                 Value::Clo(env, f, x, m) => {
-                    let mut env = env.clone();
+                    let mut env = (**env).clone();
                     env.insert(f.clone(), m0.clone());
                     env.insert(x.clone(), n);
-                    eval(env, m.clone())
+                    eval(Rc::new(env), m.clone())
                 }
                 _ => panic!("eval_App({:?})", m0),
             }
         }
         LetIn(x, m, n) => {
             let m = eval(env.clone(), m.clone());
-            let mut env = env.clone();
+            let mut env = (*env).clone();
             env.insert(x.clone(), m);
-            eval(env, n.clone())
+            eval(Rc::new(env), n.clone())
         }
         Ifte(m, n1, n2) => {
             let m = eval(env.clone(), m.clone());
