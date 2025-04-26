@@ -1,11 +1,14 @@
 mod ast0;
 mod ast1;
+mod ast2;
 mod eval;
 mod names;
 mod parse;
 mod trans01;
+mod trans02;
 
 use ahash::HashMap;
+use ast2::reduce;
 use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -14,7 +17,6 @@ use eval::*;
 use parse::*;
 use pest::Parser;
 use std::{fs, rc::Rc};
-use trans01::trans;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -22,9 +24,8 @@ fn main() {
     match LamParser::parse(Rule::prog, &file) {
         Ok(mut pairs) => {
             let tm = parse_term(pairs.next().unwrap().into_inner());
-            let tm = trans(Rc::new(HashMap::default()), tm);
-            println!("term  : {:?}", tm);
-            let val = eval(Rc::new(ahash::HashMap::default()), tm);
+            let tm = trans01::trans(Rc::new(HashMap::default()), tm);
+            let val = eval(Rc::new(HashMap::default()), tm);
             println!("value : {:?}", val);
         }
         Err(e) => {
