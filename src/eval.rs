@@ -1,8 +1,8 @@
 use crate::{ast1::*, names::Name};
 use ahash::HashMap;
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
-type Env = Rc<HashMap<Rc<Name>, Rc<Value>>>;
+type Env = Rc<RefCell<HashMap<Rc<Name>, Rc<Value>>>>;
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -28,7 +28,7 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
     match &*m0 {
         Int(i) => int(*i),
         Bool(b) => bool(*b),
-        Var(x) => match env.get(x) {
+        Var(x) => match env.borrow().get(x) {
             Some(v) => v.clone(),
             None => {
                 println!("cannot find({:?})", x);
@@ -44,25 +44,28 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
             let n = eval(env, n.clone());
             eval_op2(op2, m, n)
         }
-        Fun(f, x, m) => clo(env, f.clone(), x.clone(), m.clone()),
+        Fun(f, x, m) => clo(Rc::new((*env).clone()), f.clone(), x.clone(), m.clone()),
         App(m, n) => {
             let m0 = eval(env.clone(), m.clone());
             let n = eval(env, n.clone());
             match &*m0 {
                 Value::Clo(env, f, x, m) => {
-                    let mut env = (**env).clone();
-                    env.insert(f.clone(), m0.clone());
-                    env.insert(x.clone(), n);
-                    eval(Rc::new(env), m.clone())
+                    let opt1 = env.borrow_mut().insert(f.clone(), m0.clone());
+                    let opt2 = env.borrow_mut().insert(x.clone(), n);
+                    let result = eval(env.clone(), m.clone());
+                    opt1.and_then(|v| env.borrow_mut().insert(f.clone(), v));
+                    opt2.and_then(|v| env.borrow_mut().insert(x.clone(), v));
+                    return result;
                 }
                 _ => panic!("eval_App({:?})", m0),
             }
         }
         LetIn(x, m, n) => {
             let m = eval(env.clone(), m.clone());
-            let mut env = (*env).clone();
-            env.insert(x.clone(), m);
-            eval(Rc::new(env), n.clone())
+            let opt = env.borrow_mut().insert(x.clone(), m);
+            let result = eval(env.clone(), n.clone());
+            opt.and_then(|v| env.borrow_mut().insert(x.clone(), v));
+            return result;
         }
         Ifte(m, n1, n2) => {
             let m = eval(env.clone(), m.clone());
