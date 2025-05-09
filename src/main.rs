@@ -8,7 +8,6 @@ mod trans01;
 mod trans02;
 
 use ahash::HashMap;
-use ast2::reduce;
 use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
