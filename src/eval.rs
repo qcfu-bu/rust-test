@@ -1,14 +1,24 @@
 use crate::{ast1::*, names::Name};
 use ahash::HashMap;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 type Env = Rc<RefCell<HashMap<Rc<Name>, Rc<Value>>>>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Value {
     Int(i32),
     Bool(bool),
     Clo(Env, Rc<Name>, Rc<Name>, Rc<Term>),
+}
+
+impl Debug for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            Self::Int(i) => f.write_fmt(format_args!("Int({})", i)),
+            Self::Bool(b) => f.write_fmt(format_args!("Bool({})", b)),
+            Self::Clo(_, x, y, m) => f.write_fmt(format_args!("Clo({:?}, {:?}, {:?})", x, y, m)),
+        }
+    }
 }
 
 fn int(i: i32) -> Rc<Value> {
@@ -25,6 +35,7 @@ fn clo(env: Env, x: Rc<Name>, y: Rc<Name>, m: Rc<Term>) -> Rc<Value> {
 
 pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
     use Term::*;
+    // println!("eval({:?})", m0);
     match &*m0 {
         Int(i) => int(*i),
         Bool(b) => bool(*b),
@@ -50,7 +61,9 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
             let n = eval(env, n.clone());
             match &*m0 {
                 Value::Clo(env, f, x, m) => {
+                    // println!("insert({:?}, {:?})", f, m0);
                     let opt1 = env.borrow_mut().insert(f.clone(), m0.clone());
+                    // println!("insert({:?}, {:?})", x, n);
                     let opt2 = env.borrow_mut().insert(x.clone(), n);
                     let result = eval(env.clone(), m.clone());
                     opt1.and_then(|v| env.borrow_mut().insert(f.clone(), v));
@@ -81,6 +94,7 @@ pub fn eval(env: Env, m0: Rc<Term>) -> Rc<Value> {
 fn eval_op1(op: &Op1, m: Rc<Value>) -> Rc<Value> {
     use self::Op1::*;
     use Value::*;
+    // println!("eval_op1({:?}, {:?})", op, m);
     match (op, &*m) {
         (Not, Bool(b)) => bool(!b),
         (Neg, Int(i)) => int(-i),
@@ -91,6 +105,7 @@ fn eval_op1(op: &Op1, m: Rc<Value>) -> Rc<Value> {
 fn eval_op2(op: &Op2, m: Rc<Value>, n: Rc<Value>) -> Rc<Value> {
     use self::Op2::*;
     use Value::*;
+    // println!("eval_op2({:?}, {:?}, {:?})", op, m, n);
     match (op, &*m, &*n) {
         (Add, Int(i), Int(j)) => int(i + j),
         (Sub, Int(i), Int(j)) => int(i - j),

@@ -1,0 +1,7 @@
+let rec kfact n k :=
+  if n <= 0 then
+    k 1
+  else
+    kfact (n - 1) (fun r => k r)
+in 
+kfact 2 (fun x => x)

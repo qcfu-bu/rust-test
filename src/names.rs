@@ -1,14 +1,21 @@
 use std::{
     cmp::Ordering,
+    fmt::Debug,
     hash::{Hash, Hasher},
     rc::*,
     sync::atomic::{AtomicI32, Ordering::Relaxed},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Name {
     pub name: String,
     pub id: i32,
+}
+
+impl Debug for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}_{}", self.name, self.id))
+    }
 }
 
 static STAMP: AtomicI32 = AtomicI32::new(0);
