@@ -2,7 +2,7 @@ use crate::{ast0, ast1, names::Name};
 use ahash::HashMap;
 use std::rc::*;
 
-pub type Ctx = Rc<HashMap<String, Rc<Name>>>;
+pub type Ctx = Rc<HashMap<String, Name>>;
 
 pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> Rc<ast1::Term> {
     use ast0::Term::*;

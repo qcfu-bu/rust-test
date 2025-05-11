@@ -15,6 +15,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 use eval::*;
 use parse::*;
 use pest::Parser;
+use rpds::{HashTrieMap, RedBlackTreeMap};
 use std::{cell::RefCell, fs, rc::Rc};
 
 fn main() {
@@ -24,7 +25,7 @@ fn main() {
         Ok(mut pairs) => {
             let tm = parse_term(pairs.next().unwrap().into_inner());
             let tm = trans01::trans(Rc::new(HashMap::default()), tm);
-            let val = eval(Rc::new(RefCell::new(HashMap::default())), tm);
+            let val = eval(HashTrieMap::default(), tm);
             println!("value : {:?}", val);
         }
         Err(e) => {

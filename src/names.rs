@@ -21,11 +21,11 @@ impl Debug for Name {
 static STAMP: AtomicI32 = AtomicI32::new(0);
 
 impl Name {
-    pub fn create(s: String) -> Rc<Self> {
-        Rc::new(Name {
+    pub fn create(s: String) -> Self {
+        Name {
             name: s,
             id: STAMP.fetch_add(1, Relaxed),
-        })
+        }
     }
 }
 

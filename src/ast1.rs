@@ -27,12 +27,12 @@ pub enum Op2 {
 pub enum Term {
     Int(i32),
     Bool(bool),
-    Var(Rc<Name>),
+    Var(Name),
     Op1(Op1, Rc<Term>),
     Op2(Op2, Rc<Term>, Rc<Term>),
-    Fun(Rc<Name>, Rc<Name>, Rc<Term>),
+    Fun(Name, Name, Rc<Term>),
     App(Rc<Term>, Rc<Term>),
-    LetIn(Rc<Name>, Rc<Term>, Rc<Term>),
+    LetIn(Name, Rc<Term>, Rc<Term>),
     Ifte(Rc<Term>, Rc<Term>, Rc<Term>),
 }
 
@@ -44,7 +44,7 @@ pub fn bool(b: bool) -> Rc<Term> {
     Rc::new(Term::Bool(b))
 }
 
-pub fn var(x: Rc<Name>) -> Rc<Term> {
+pub fn var(x: Name) -> Rc<Term> {
     Rc::new(Term::Var(x))
 }
 
@@ -56,7 +56,7 @@ pub fn op2(op: Op2, m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
     Rc::new(Term::Op2(op, m, n))
 }
 
-pub fn fun(x: Rc<Name>, y: Rc<Name>, m: Rc<Term>) -> Rc<Term> {
+pub fn fun(x: Name, y: Name, m: Rc<Term>) -> Rc<Term> {
     Rc::new(Term::Fun(x, y, m))
 }
 
@@ -64,7 +64,7 @@ pub fn app(m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
     Rc::new(Term::App(m, n))
 }
 
-pub fn letin(x: Rc<Name>, m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
+pub fn letin(x: Name, m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
     Rc::new(Term::LetIn(x, m, n))
 }
 
@@ -72,7 +72,7 @@ pub fn ifte(m: Rc<Term>, n1: Rc<Term>, n2: Rc<Term>) -> Rc<Term> {
     Rc::new(Term::Ifte(m, n1, n2))
 }
 
-pub fn subst(m0: Rc<Term>, x0: Rc<Name>, n: Rc<Term>) -> Rc<Term> {
+pub fn subst(m0: Rc<Term>, x0: Name, n: Rc<Term>) -> Rc<Term> {
     use Term::*;
     match &*m0 {
         Int(_) => m0.clone(),
