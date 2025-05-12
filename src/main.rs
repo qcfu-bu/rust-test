@@ -1,18 +1,19 @@
 mod ast0;
-mod ast1;
+// mod ast1;
 mod ast2;
-mod eval;
+// mod eval;
 mod names;
 mod parse;
-mod trans01;
+// mod trans01;
 mod trans02;
 
 use ahash::HashMap;
+use ast2::reduce;
 use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-use eval::*;
+// use eval::*;
 use parse::*;
 use pest::Parser;
 use rpds::{HashTrieMap, RedBlackTreeMap};
@@ -24,8 +25,9 @@ fn main() {
     match LamParser::parse(Rule::prog, &file) {
         Ok(mut pairs) => {
             let tm = parse_term(pairs.next().unwrap().into_inner());
-            let tm = trans01::trans(HashMap::default(), tm);
-            let val = eval(HashTrieMap::default(), tm);
+            let tm = trans02::trans(Rc::new(HashMap::default()), tm);
+            let val = reduce(tm);
+            // let val = eval(HashTrieMap::default(), tm);
             println!("value : {:?}", val);
         }
         Err(e) => {

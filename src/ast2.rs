@@ -24,61 +24,61 @@ pub enum Op2 {
     Or,
 }
 
-pub type Binder1<'a> = Rc<dyn Fn(Term<'a>) -> Term<'a> + 'a>;
-pub type Binder2<'a> = Rc<dyn Fn(Term<'a>, Term<'a>) -> Term<'a> + 'a>;
-pub type Term<'a> = Rc<TermNode<'a>>;
+pub type Binder1 = Rc<dyn Fn(Term) -> Term>;
+pub type Binder2 = Rc<dyn Fn(Term, Term) -> Term>;
+pub type Term = Rc<TermNode>;
 
 #[derive(Derivative)]
-#[derivative(Debug)]
-pub enum TermNode<'a> {
+#[derivative(Debug, Clone)]
+pub enum TermNode {
     Int(i32),
     Bool(bool),
     Var(Name),
-    Op1(Op1, Term<'a>),
-    Op2(Op2, Term<'a>, Term<'a>),
-    Fun(#[derivative(Debug = "ignore")] Binder2<'a>),
-    App(Term<'a>, Term<'a>),
-    LetIn(Term<'a>, #[derivative(Debug = "ignore")] Binder1<'a>),
-    Ifte(Term<'a>, Term<'a>, Term<'a>),
+    Op1(Op1, Term),
+    Op2(Op2, Term, Term),
+    Fun(#[derivative(Debug = "ignore")] Binder2),
+    App(Term, Term),
+    LetIn(Term, #[derivative(Debug = "ignore")] Binder1),
+    Ifte(Term, Term, Term),
 }
 
-pub fn int<'a>(i: i32) -> Term<'a> {
+pub fn int(i: i32) -> Term {
     Rc::new(TermNode::Int(i))
 }
 
-pub fn bool<'a>(b: bool) -> Term<'a> {
+pub fn bool(b: bool) -> Term {
     Rc::new(TermNode::Bool(b))
 }
 
-pub fn var<'a>(x: Name) -> Term<'a> {
+pub fn var(x: Name) -> Term {
     Rc::new(TermNode::Var(x))
 }
 
-pub fn op1<'a>(op: Op1, m: Term<'a>) -> Term<'a> {
+pub fn op1(op: Op1, m: Term) -> Term {
     Rc::new(TermNode::Op1(op, m))
 }
 
-pub fn op2<'a>(op: Op2, m: Term<'a>, n: Term<'a>) -> Term<'a> {
+pub fn op2(op: Op2, m: Term, n: Term) -> Term {
     Rc::new(TermNode::Op2(op, m, n))
 }
 
-pub fn fun<'a>(bnd: Binder2<'a>) -> Term<'a> {
+pub fn fun(bnd: Binder2) -> Term {
     Rc::new(TermNode::Fun(bnd))
 }
 
-pub fn app<'a>(m: Term<'a>, n: Term<'a>) -> Term<'a> {
+pub fn app(m: Term, n: Term) -> Term {
     Rc::new(TermNode::App(m, n))
 }
 
-pub fn letin<'a>(m: Term<'a>, bnd: Binder1<'a>) -> Term<'a> {
+pub fn letin(m: Term, bnd: Binder1) -> Term {
     Rc::new(TermNode::LetIn(m, bnd))
 }
 
-pub fn ifte<'a>(m: Term<'a>, n1: Term<'a>, n2: Term<'a>) -> Term<'a> {
+pub fn ifte(m: Term, n1: Term, n2: Term) -> Term {
     Rc::new(TermNode::Ifte(m, n1, n2))
 }
 
-pub fn reduce<'a>(m0: Term<'a>) -> Term<'a> {
+pub fn reduce(m0: Term) -> Term {
     use TermNode::*;
     match &*m0 {
         Int(_) => m0.clone(),
@@ -117,7 +117,7 @@ pub fn reduce<'a>(m0: Term<'a>) -> Term<'a> {
     }
 }
 
-fn reduce_op1<'a>(op: &Op1, m: Term<'a>) -> Term<'a> {
+fn reduce_op1(op: &Op1, m: Term) -> Term {
     use self::Op1::*;
     use TermNode::*;
     match (op, &*m) {
@@ -127,7 +127,7 @@ fn reduce_op1<'a>(op: &Op1, m: Term<'a>) -> Term<'a> {
     }
 }
 
-fn reduce_op2<'a>(op: &Op2, m: Term<'a>, n: Term<'a>) -> Term<'a> {
+fn reduce_op2(op: &Op2, m: Term, n: Term) -> Term {
     use self::Op2::*;
     use TermNode::*;
     match (op, &*m, &*n) {

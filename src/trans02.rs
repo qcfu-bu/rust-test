@@ -1,55 +1,64 @@
-use crate::{ast0, ast2};
+use crate::{
+    ast0,
+    ast2::{self, Binder1, Binder2},
+};
 use ahash::HashMap;
-use std::rc::*;
+use std::rc::Rc;
 
-pub type Ctx<'a> = Rc<HashMap<String, ast2::Term<'a>>>;
+pub type Ctx = Rc<HashMap<u64, ast2::Term>>;
 
-pub fn trans<'a>(ctx: Ctx<'a>, m: &'a ast0::Term) -> ast2::Term<'a> {
+pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> ast2::Term {
     use ast0::Term::*;
-    match m {
+    match &*m {
         Int(i) => ast2::int(*i),
         Bool(b) => ast2::bool(*b),
         Var(s) => ctx.get(s).unwrap().clone(),
         Op1(op1, m) => {
             let op1 = trans_op1(op1);
-            let m = trans(ctx, &*m);
+            let m = trans(ctx, m.clone());
             ast2::op1(op1, m)
         }
         Op2(op2, m, n) => {
             let op2 = trans_op2(op2);
-            let m = trans(ctx.clone(), &*m);
-            let n = trans(ctx.clone(), &*n);
+            let m = trans(ctx.clone(), m.clone());
+            let n = trans(ctx.clone(), n.clone());
             ast2::op2(op2, m, n)
         }
-        Fun(f0, x0, m0) => {
-            let bnd = Rc::new(move |fv, xv| {
+        Fun(f, x, m0) => {
+            let f = f.clone();
+            let x = x.clone();
+            let m0 = m0.clone();
+            let bnd: Binder2 = Rc::new(move |fv, xv| {
                 let mut ctx = (*ctx).clone();
-                ctx.insert(f0.clone(), fv);
-                ctx.insert(x0.clone(), xv);
-                trans(Rc::new(ctx), &*m0)
+                ctx.insert(f, fv);
+                ctx.insert(x, xv);
+                trans(Rc::new(ctx), m0.clone())
             });
             ast2::fun(bnd)
         }
         App(m, n) => {
-            let m = trans(ctx.clone(), &*m);
-            let n = trans(ctx.clone(), &*n);
+            let m = trans(ctx.clone(), m.clone());
+            let n = trans(ctx.clone(), n.clone());
             ast2::app(m, n)
         }
-        LetIn(x0, m, n) => {
-            let m = trans(ctx.clone(), &*m);
-            let bnd = Rc::new(move |xv| {
+        LetIn(x, m, n) => {
+            let m = trans(ctx.clone(), m.clone());
+            let x = x.clone();
+            let n = n.clone();
+            let bnd: Binder1 = Rc::new(move |xv| {
                 let mut ctx = (*ctx).clone();
-                ctx.insert(x0.clone(), xv);
-                trans(Rc::new(ctx), &*n)
+                ctx.insert(x, xv);
+                trans(Rc::new(ctx), n.clone())
             });
             ast2::letin(m, bnd)
         }
         Ifte(m, n1, n2) => {
-            let m = trans(ctx.clone(), &*m);
-            let n1 = trans(ctx.clone(), &*n1);
-            let n2 = trans(ctx.clone(), &*n2);
+            let m = trans(ctx.clone(), m.clone());
+            let n1 = trans(ctx.clone(), n1.clone());
+            let n2 = trans(ctx.clone(), n2.clone());
             ast2::ifte(m, n1, n2)
         }
+        _ => todo!(),
     }
 }
 

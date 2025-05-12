@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use crate::names::Name;
+
 #[derive(Debug)]
 pub enum Op1 {
     Neg,
@@ -26,12 +28,12 @@ pub enum Op2 {
 pub enum Term {
     Int(i32),
     Bool(bool),
-    Var(String),
+    Var(u64),
     Op1(Op1, Rc<Term>),
     Op2(Op2, Rc<Term>, Rc<Term>),
-    Fun(String, String, Rc<Term>),
+    Fun(u64, u64, Rc<Term>),
     App(Rc<Term>, Rc<Term>),
-    LetIn(String, Rc<Term>, Rc<Term>),
+    LetIn(u64, Rc<Term>, Rc<Term>),
     Ifte(Rc<Term>, Rc<Term>, Rc<Term>),
 }
 
@@ -44,7 +46,8 @@ pub fn bool(b: bool) -> Rc<Term> {
 }
 
 pub fn var(s: String) -> Rc<Term> {
-    Rc::new(Term::Var(s))
+    let x = Name::create(s);
+    Rc::new(Term::Var(x.id))
 }
 
 pub fn op1(op: Op1, m: Rc<Term>) -> Rc<Term> {
@@ -56,7 +59,9 @@ pub fn op2<'a>(op: Op2, m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
 }
 
 pub fn fun(s1: String, s2: String, m: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::Fun(s1, s2, m))
+    let f = Name::create(s1);
+    let x = Name::create(s2);
+    Rc::new(Term::Fun(f.id, x.id, m))
 }
 
 pub fn app(m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
@@ -64,7 +69,8 @@ pub fn app(m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
 }
 
 pub fn letin(s: String, m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::LetIn(s, m, n))
+    let x = Name::create(s);
+    Rc::new(Term::LetIn(x.id, m, n))
 }
 
 pub fn ifte<'a>(m: Rc<Term>, n1: Rc<Term>, n2: Rc<Term>) -> Rc<Term> {

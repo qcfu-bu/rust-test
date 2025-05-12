@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     fmt::Debug,
-    hash::{Hash, Hasher},
+    hash::{DefaultHasher, Hash, Hasher},
     rc::*,
     sync::atomic::{AtomicI32, Ordering::Relaxed},
 };
@@ -9,7 +9,7 @@ use std::{
 #[derive(Clone)]
 pub struct Name {
     pub name: Rc<String>,
-    pub id: i32,
+    pub id: u64,
 }
 
 impl Debug for Name {
@@ -22,9 +22,11 @@ static STAMP: AtomicI32 = AtomicI32::new(0);
 
 impl Name {
     pub fn create(s: String) -> Self {
+        let mut state = DefaultHasher::new();
+        s.hash(&mut state);
         Name {
             name: Rc::new(s),
-            id: STAMP.fetch_add(1, Relaxed),
+            id: state.finish(),
         }
     }
 }
