@@ -24,7 +24,7 @@ fn main() {
     match LamParser::parse(Rule::prog, &file) {
         Ok(mut pairs) => {
             let tm = parse_term(pairs.next().unwrap().into_inner());
-            let tm = trans01::trans(Rc::new(HashMap::default()), tm);
+            let tm = trans01::trans(HashMap::default(), tm);
             let val = eval(HashTrieMap::default(), tm);
             println!("value : {:?}", val);
         }

@@ -8,7 +8,7 @@ use std::{
 
 #[derive(Clone)]
 pub struct Name {
-    pub name: String,
+    pub name: Rc<String>,
     pub id: i32,
 }
 
@@ -23,7 +23,7 @@ static STAMP: AtomicI32 = AtomicI32::new(0);
 impl Name {
     pub fn create(s: String) -> Self {
         Name {
-            name: s,
+            name: Rc::new(s),
             id: STAMP.fetch_add(1, Relaxed),
         }
     }

@@ -119,9 +119,9 @@ pub fn subst(m0: Rc<Term>, x0: Name, n: Rc<Term>) -> Rc<Term> {
 pub fn reduce(m0: Rc<Term>) -> Rc<Term> {
     use Term::*;
     match &*m0 {
-        Int(i) => m0.clone(),
-        Bool(b) => m0.clone(),
-        Var(x) => m0.clone(),
+        Int(_) => m0.clone(),
+        Bool(_) => m0.clone(),
+        Var(_) => m0.clone(),
         Op1(op1, m) => {
             let m = reduce(m0.clone());
             reduce_op1(&op1, m)

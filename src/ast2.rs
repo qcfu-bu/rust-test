@@ -33,7 +33,7 @@ pub type Term<'a> = Rc<TermNode<'a>>;
 pub enum TermNode<'a> {
     Int(i32),
     Bool(bool),
-    Var(Rc<Name>),
+    Var(Name),
     Op1(Op1, Term<'a>),
     Op2(Op2, Term<'a>, Term<'a>),
     Fun(#[derivative(Debug = "ignore")] Binder2<'a>),
@@ -50,7 +50,7 @@ pub fn bool<'a>(b: bool) -> Term<'a> {
     Rc::new(TermNode::Bool(b))
 }
 
-pub fn var<'a>(x: Rc<Name>) -> Term<'a> {
+pub fn var<'a>(x: Name) -> Term<'a> {
     Rc::new(TermNode::Var(x))
 }
 
