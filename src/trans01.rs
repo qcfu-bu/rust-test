@@ -1,12 +1,11 @@
 use crate::{ast0, ast1, names::Name};
 use ahash::HashMap;
-use std::rc::*;
 
-pub type Ctx = Rc<HashMap<String, Rc<Name>>>;
+pub type Ctx = HashMap<String, Name>;
 
-pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> Rc<ast1::Term> {
+pub fn trans(ctx: &mut Ctx, m: &ast0::Term) -> Box<ast1::Term> {
     use ast0::Term::*;
-    match &*m {
+    match m {
         Int(i) => ast1::int(*i),
         Bool(b) => ast1::bool(*b),
         Var(s) => {
@@ -15,41 +14,41 @@ pub fn trans(ctx: Ctx, m: Rc<ast0::Term>) -> Rc<ast1::Term> {
         }
         Op1(op1, m) => {
             let op1 = trans_op1(op1);
-            let m = trans(ctx, m.clone());
+            let m = trans(ctx, m);
             ast1::op1(op1, m)
         }
         Op2(op2, m, n) => {
             let op2 = trans_op2(op2);
-            let m = trans(ctx.clone(), m.clone());
-            let n = trans(ctx.clone(), n.clone());
+            let m = trans(ctx, m);
+            let n = trans(ctx, n);
             ast1::op2(op2, m, n)
         }
         Fun(f0, x0, m) => {
-            let mut ctx = (*ctx).clone();
-            let f = Name::create(f0.clone());
-            let x = Name::create(x0.clone());
-            ctx.insert(f0.clone(), f.clone());
-            ctx.insert(x0.clone(), x.clone());
-            let m = trans(Rc::new(ctx), m.clone());
+            let mut local = ctx.clone();
+            let f = Name::new(f0.clone());
+            let x = Name::new(x0.clone());
+            local.insert(f0.clone(), f.clone());
+            local.insert(x0.clone(), x.clone());
+            let m = trans(&mut local, m);
             ast1::fun(f, x, m)
         }
         App(m, n) => {
-            let m = trans(ctx.clone(), m.clone());
-            let n = trans(ctx.clone(), n.clone());
+            let m = trans(ctx, m);
+            let n = trans(ctx, n);
             ast1::app(m, n)
         }
         LetIn(x0, m, n) => {
-            let m = trans(ctx.clone(), m.clone());
-            let mut ctx = (*ctx).clone();
-            let x = Name::create(x0.clone());
-            ctx.insert(x0.clone(), x.clone());
-            let n = trans(Rc::new(ctx), n.clone());
+            let m = trans(ctx, m);
+            let mut local = ctx.clone();
+            let x = Name::new(x0.clone());
+            local.insert(x0.clone(), x.clone());
+            let n = trans(&mut local, n);
             ast1::letin(x, m, n)
         }
         Ifte(m, n1, n2) => {
-            let m = trans(ctx.clone(), m.clone());
-            let n1 = trans(ctx.clone(), n1.clone());
-            let n2 = trans(ctx.clone(), n2.clone());
+            let m = trans(ctx, m);
+            let n1 = trans(ctx, n1);
+            let n2 = trans(ctx, n2);
             ast1::ifte(m, n1, n2)
         }
     }

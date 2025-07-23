@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 #[derive(Debug)]
 pub enum Op1 {
     Neg,
@@ -27,46 +25,46 @@ pub enum Term {
     Int(i32),
     Bool(bool),
     Var(String),
-    Op1(Op1, Rc<Term>),
-    Op2(Op2, Rc<Term>, Rc<Term>),
-    Fun(String, String, Rc<Term>),
-    App(Rc<Term>, Rc<Term>),
-    LetIn(String, Rc<Term>, Rc<Term>),
-    Ifte(Rc<Term>, Rc<Term>, Rc<Term>),
+    Op1(Op1, Box<Term>),
+    Op2(Op2, Box<Term>, Box<Term>),
+    Fun(String, String, Box<Term>),
+    App(Box<Term>, Box<Term>),
+    LetIn(String, Box<Term>, Box<Term>),
+    Ifte(Box<Term>, Box<Term>, Box<Term>),
 }
 
-pub fn int(i: i32) -> Rc<Term> {
-    Rc::new(Term::Int(i))
+pub fn int(i: i32) -> Box<Term> {
+    Box::new(Term::Int(i))
 }
 
-pub fn bool(b: bool) -> Rc<Term> {
-    Rc::new(Term::Bool(b))
+pub fn bool(b: bool) -> Box<Term> {
+    Box::new(Term::Bool(b))
 }
 
-pub fn var(s: String) -> Rc<Term> {
-    Rc::new(Term::Var(s))
+pub fn var(s: String) -> Box<Term> {
+    Box::new(Term::Var(s))
 }
 
-pub fn op1(op: Op1, m: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::Op1(op, m))
+pub fn op1(op: Op1, m: Box<Term>) -> Box<Term> {
+    Box::new(Term::Op1(op, m))
 }
 
-pub fn op2<'a>(op: Op2, m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::Op2(op, m, n))
+pub fn op2(op: Op2, m: Box<Term>, n: Box<Term>) -> Box<Term> {
+    Box::new(Term::Op2(op, m, n))
 }
 
-pub fn fun(s1: String, s2: String, m: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::Fun(s1, s2, m))
+pub fn fun(s1: String, s2: String, m: Box<Term>) -> Box<Term> {
+    Box::new(Term::Fun(s1, s2, m))
 }
 
-pub fn app(m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::App(m, n))
+pub fn app(m: Box<Term>, n: Box<Term>) -> Box<Term> {
+    Box::new(Term::App(m, n))
 }
 
-pub fn letin(s: String, m: Rc<Term>, n: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::LetIn(s, m, n))
+pub fn letin(s: String, m: Box<Term>, n: Box<Term>) -> Box<Term> {
+    Box::new(Term::LetIn(s, m, n))
 }
 
-pub fn ifte<'a>(m: Rc<Term>, n1: Rc<Term>, n2: Rc<Term>) -> Rc<Term> {
-    Rc::new(Term::Ifte(m, n1, n2))
+pub fn ifte(m: Box<Term>, n1: Box<Term>, n2: Box<Term>) -> Box<Term> {
+    Box::new(Term::Ifte(m, n1, n2))
 }

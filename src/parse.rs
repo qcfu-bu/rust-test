@@ -2,7 +2,6 @@ use crate::ast0;
 use ast0::*;
 use pest::iterators::Pairs;
 use pest::pratt_parser::PrattParser;
-use std::rc::*;
 
 #[derive(pest_derive::Parser)]
 #[grammar = "lam.pest"]
@@ -23,7 +22,7 @@ lazy_static::lazy_static! {
   };
 }
 
-pub fn parse_term(pairs: Pairs<Rule>) -> Rc<Term> {
+pub fn parse_term(pairs: Pairs<Rule>) -> Box<Term> {
     use self::Op1::*;
     use self::Op2::*;
     PRATT_PARSER

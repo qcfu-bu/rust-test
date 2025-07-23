@@ -1,24 +1,23 @@
 use std::{
     cmp::Ordering,
     hash::{Hash, Hasher},
-    rc::*,
     sync::atomic::{AtomicI32, Ordering::Relaxed},
 };
 
 #[derive(Debug, Clone)]
 pub struct Name {
-    pub name: String,
-    pub id: i32,
+    name: String,
+    id: i32,
 }
 
 static STAMP: AtomicI32 = AtomicI32::new(0);
 
 impl Name {
-    pub fn create(s: String) -> Rc<Self> {
-        Rc::new(Name {
+    pub fn new(s: String) -> Self {
+        Name {
             name: s,
             id: STAMP.fetch_add(1, Relaxed),
-        })
+        }
     }
 }
 
